@@ -1,0 +1,21 @@
+╷
+│ Error: Unsupported attribute
+│ 
+│   on ../modules/eks/eks.tf line 61, in output "eks_cluster_kubeconfig":
+│   61:   value = aws_eks_cluster.eks_cluster.kubeconfig
+│ 
+│ This object has no argument, nested block, or exported attribute named
+│ "kubeconfig".
+╵
+╷
+│ Error: Failed to read the given file as a state or plan file
+│ 
+│ State read error: Error loading statefile: open plan.binary: no such file
+│ or directory
+│ 
+│ Plan read error: couldn't load the provided path as either a local plan
+│ file (open plan.binary: no such file or directory) or a saved cloud plan
+│ (open plan.binary: no such file or directory)
+╵
+
+Error: Failed to read the given file as a state or plan file

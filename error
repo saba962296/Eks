@@ -19,3 +19,45 @@
 ╵
 
 Error: Failed to read the given file as a state or plan file
+
+
+
+resource "aws_eks_cluster" "eks_cluster" {
+  name     = var.cluster_name
+  role_arn = aws_iam_role.eks_role.arn
+  vpc_config {
+    subnet_ids = var.subnet_ids
+    security_group_ids = [aws_security_group.eks_sg.id]
+    endpoint_public_access = false  # Make it private as per your requirement
+    endpoint_private_access = true
+  }
+
+  encryption_config {
+    provider {
+      key_arn = var.kms_key_arn
+    }
+    resources = ["secrets"]
+  }
+
+  logging {
+    cluster_logging {
+      types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+      enabled = true
+    }
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.eks_role_policy_attachment]
+}
+
+output "eks_cluster_endpoint" {
+  value = aws_eks_cluster.eks_cluster.endpoint
+}
+
+output "eks_cluster_certificate_authority_data" {
+  value = aws_eks_cluster.eks_cluster.certificate_authority[0].data
+}
+
+output "eks_cluster_name" {
+  value = aws_eks_cluster.eks_cluster.name
+}
+

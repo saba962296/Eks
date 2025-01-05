@@ -1,63 +1,77 @@
-╷
-│ Error: Unsupported attribute
-│ 
-│   on ../modules/eks/eks.tf line 61, in output "eks_cluster_kubeconfig":
-│   61:   value = aws_eks_cluster.eks_cluster.kubeconfig
-│ 
-│ This object has no argument, nested block, or exported attribute named
-│ "kubeconfig".
-╵
-╷
-│ Error: Failed to read the given file as a state or plan file
-│ 
-│ State read error: Error loading statefile: open plan.binary: no such file
-│ or directory
-│ 
-│ Plan read error: couldn't load the provided path as either a local plan
-│ file (open plan.binary: no such file or directory) or a saved cloud plan
-│ (open plan.binary: no such file or directory)
-╵
-
-Error: Failed to read the given file as a state or plan file
-
-
-
-resource "aws_eks_cluster" "eks_cluster" {
-  name     = var.cluster_name
-  role_arn = aws_iam_role.eks_role.arn
-  vpc_config {
-    subnet_ids = var.subnet_ids
-    security_group_ids = [aws_security_group.eks_sg.id]
-    endpoint_public_access = false  # Make it private as per your requirement
-    endpoint_private_access = true
-  }
-
-  encryption_config {
-    provider {
-      key_arn = var.kms_key_arn
+{
+    "cluster": {
+        "name": "kklp-test-eks-cluster",
+        "arn": "arn:aws:eks:eu-central-1:940482453147:cluster/kklp-test-eks-cluster",
+        "createdAt": "2024-12-30T21:00:04.589000+05:30",
+        "version": "1.28",
+        "endpoint": "https://5D9FFB5F7F25B24FF56E3959FC3D9E18.gr7.eu-central-1.eks.amazonaws.com",
+        "roleArn": "arn:aws:iam::940482453147:role/eks-cluster-role",
+        "resourcesVpcConfig": {
+            "subnetIds": [
+                "subnet-017ec8abb67ae7869",
+                "subnet-009a7f04ba71d0ea1"
+            ],
+            "securityGroupIds": [
+                "sg-043bb7ca8b9bff082"
+            ],
+            "clusterSecurityGroupId": "sg-0475b120fe031109f",
+            "vpcId": "vpc-0d4befaae1efca56d",
+            "endpointPublicAccess": false,
+            "endpointPrivateAccess": true,
+            "publicAccessCidrs": []
+        },
+        "kubernetesNetworkConfig": {
+            "serviceIpv4Cidr": "172.20.0.0/16",
+            "ipFamily": "ipv4",
+            "elasticLoadBalancing": {
+                "enabled": false
+            }
+        },
+        "logging": {
+            "clusterLogging": [
+                {
+                    "types": [
+                        "api",
+                        "audit",
+                        "authenticator",
+                        "controllerManager",
+                        "scheduler"
+                    ],
+                    "enabled": true
+                }
+            ]
+        },
+        "identity": {
+            "oidc": {
+                "issuer": "https://oidc.eks.eu-central-1.amazonaws.com/id/5D9FFB5F7F25B24FF56E3959FC3D9E18"
+            }
+        },
+        "status": "ACTIVE",
+        "certificateAuthority": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJYnl6a0ZLelNKUE13RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TkRFeU16QXhOVEk1TkRCYUZ3MHpOREV5TWpneE5UTTBOREJhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUURLcUkza3NpNTkwYXVUcDUzMzdDRHRlaHpCTW5IVmltcVUxMjYyYUt5Mm94aFVzMmZmZFFxWUpmbTEKcUl6SWdhZUZnNjBVaitBMUh6cGJjSDcrWER4UkordDNmMnRWcmRsR1k1NDJtSFFjR3M4dExocHZHbFhDLytWbQpNZDlRVVpjMmh4Q1dvZzMxYnZ3SEpXZWpVYnc1cUZrb3RZVlduQUVONDNPdzFWUTluM2tLN3V1RTRpOG0rYjBHCm0xZVo3NEVFNjVWMUg0QjkrWjJSZjVha3VoNTFvazhQZHpUNi9yeGVDNWY2N2JVa1BaTDhCSGZzR2pBc1FXQTEKdlBSalcvYzBBRnZwNUJMSUpTNy84WENLT1YvemVRZlArUVJwb0hqSTdHMnltUXVjSHBaQ2owWVZ4eC93VW9SaQpCcHF4SXVINjEzbDJWeC9tT1EvVmg0L2tUdHp0QWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJSd3pCOHFzWitqYTRnNDh4Z1lUb1c1UWlNTlR6QVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ2d6UW9QWXU4VgpvdndMR1gvb05xcmtqYzRvdklEVTR5MHNZT0RLVEk3VDlqVGVaQ1pZdHhYUlBDZCs2V3pJbDJ5ZnZTa2d5Qi9GCkFHam9KMEJ3YmcvRHNXdzk5R01US1BtckpCOU10clN3TElDcnYrNlRnR0FndXh4M1AvYlgyNDZoOU53NFc4Q3YKOU50Q1R5S3lYMUdPd3NiT281N01zb25UVW5meThmdVBMbHkxZXhtWW1mRGZqWEQwVXZBbUZJOFVLdU5IYzA1Mgo1ZldJeWhvVmJRK01paG1jaDNRelJubUNVc0Rma1BETFlwWXREOUFTeWE1Q0JEdEFETEkzQ3FQYXFyWWRLTkNaCmg0QzRESXVIb09zSk92WGRORU1qVkI5dmx1WllYRWtBMnFaVjlreEpXVytZSDExSkVVUkJseUp0UmhIN2RLRVEKYlIwWnRNV1A5Yy93Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+        },
+        "platformVersion": "eks.33",
+        "tags": {
+            "danske:account-name": "kklp-loyaltykey-test"
+        },
+        "encryptionConfig": [
+            {
+                "resources": [
+                    "secrets"
+                ],
+                "provider": {
+                    "keyArn": "arn:aws:kms:eu-central-1:940482453147:key/790e9691-91d5-4f91-a768-31fa4682cf9e"
+                }
+            }
+        ],
+        "health": {
+            "issues": []
+        },
+        "accessConfig": {
+            "authenticationMode": "CONFIG_MAP"
+        },
+        "upgradePolicy": {
+            "supportType": "EXTENDED"
+        }
     }
-    resources = ["secrets"]
-  }
-
-  logging {
-    cluster_logging {
-      types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-      enabled = true
-    }
-  }
-
-  depends_on = [aws_iam_role_policy_attachment.eks_role_policy_attachment]
 }
-
-output "eks_cluster_endpoint" {
-  value = aws_eks_cluster.eks_cluster.endpoint
-}
-
-output "eks_cluster_certificate_authority_data" {
-  value = aws_eks_cluster.eks_cluster.certificate_authority[0].data
-}
-
-output "eks_cluster_name" {
-  value = aws_eks_cluster.eks_cluster.name
-}
-

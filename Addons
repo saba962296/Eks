@@ -1,0 +1,217 @@
+provider "aws" {
+  region  = var.aws_region
+  version = ">= 3.0"
+}
+
+# EKS Cluster IAM Role
+resource "aws_iam_role" "eks_cluster_role" {
+  name = "eks-cluster-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "eks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Attach Required Policies to Cluster IAM Role
+resource "aws_iam_role_policy_attachment" "eks_cluster_policies" {
+  for_each = toset([
+    "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+    "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+  ])
+  role       = aws_iam_role.eks_cluster_role.name
+  policy_arn = each.value
+}
+
+# Security Group for EKS Control Plane
+resource "aws_security_group" "eks_control_plane" {
+  name   = "eks-control-plane-sg"
+  vpc_id = var.vpc_id
+
+  ingress {
+    description = "Allow EKS traffic"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# EKS Cluster
+resource "aws_eks_cluster" "eks_cluster" {
+  name     = "kklp-test-eks-cluster"
+  version  = "1.28"
+  role_arn = aws_iam_role.eks_cluster_role.arn
+
+  vpc_config {
+    subnet_ids              = ["subnet-017ec8abb67ae7869", "subnet-009a7f04ba71d0ea1"]
+    security_group_ids      = [aws_security_group.eks_control_plane.id]
+    endpoint_private_access = true
+    endpoint_public_access  = false
+  }
+
+  # Enable EKS API and ConfigMap for Authentication
+  authentication {
+    mode = "EKS_AND_CONFIG_MAP"
+  }
+
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
+  tags = {
+    Name = "kklp-test-eks-cluster"
+  }
+}
+
+# Worker Node IAM Role
+resource "aws_iam_role" "eks_node_role" {
+  name = "eks-node-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Attach Required Policies to Node IAM Role
+resource "aws_iam_role_policy_attachment" "eks_node_policies" {
+  for_each = toset([
+    "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  ])
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = each.value
+}
+
+# Managed Node Group
+resource "aws_eks_node_group" "node_group" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  node_group_name = "basic-node-group"
+  node_role_arn   = aws_iam_role.eks_node_role.arn
+  subnet_ids      = ["subnet-017ec8abb67ae7869", "subnet-009a7f04ba71d0ea1"]
+
+  scaling_config {
+    desired_size = 2
+    max_size     = 3
+    min_size     = 1
+  }
+
+  instance_types = ["t3.medium"]
+
+  tags = {
+    Name = "EKS Worker Node Group"
+  }
+}
+
+# Addon IAM Role for VPC CNI, CoreDNS, and kube-proxy
+resource "aws_iam_role" "eks_addon_role" {
+  name = "eks-addon-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "eks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Attach Required Policies to Addon IAM Role
+resource "aws_iam_role_policy_attachment" "eks_addon_policies" {
+  for_each = toset([
+    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+    "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController",
+    "arn:aws:iam::aws:policy/AmazonEKSDNSControllerPolicy"
+  ])
+  role       = aws_iam_role.eks_addon_role.name
+  policy_arn = each.value
+}
+
+# VPC CNI Addon
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  addon_name      = "vpc-cni"
+  addon_version   = "v1.12.2-eksbuild.1"
+  service_account_role_arn = aws_iam_role.eks_addon_role.arn
+  resolve_conflicts = "OVERWRITE"
+
+  tags = {
+    Name = "VPC CNI Addon"
+  }
+}
+
+# CoreDNS Addon
+resource "aws_eks_addon" "coredns" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  addon_name      = "coredns"
+  addon_version   = "v1.8.7-eksbuild.1"
+  service_account_role_arn = aws_iam_role.eks_addon_role.arn
+  resolve_conflicts = "OVERWRITE"
+
+  tags = {
+    Name = "CoreDNS Addon"
+  }
+}
+
+# KubeProxy Addon
+resource "aws_eks_addon" "kubeproxy" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  addon_name      = "kube-proxy"
+  addon_version   = "v1.27.3-eksbuild.1"
+  service_account_role_arn = aws_iam_role.eks_addon_role.arn
+  resolve_conflicts = "OVERWRITE"
+
+  tags = {
+    Name = "KubeProxy Addon"
+  }
+}
+
+# aws-auth ConfigMap
+provider "kubernetes" {
+  host                   = aws_eks_cluster.eks_cluster.endpoint
+  cluster_ca_certificate = base64decode(aws_eks_cluster.eks_cluster.certificate_authority.0.data)
+  token                  = data.aws_eks_cluster_auth.cluster_auth.token
+}
+
+resource "kubernetes_config_map" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = <<EOT
+- rolearn: ${aws_iam_role.eks_node_role.arn}
+  username: system:node:{{EC2PrivateDNSName}}
+  groups:
+    - system:bootstrappers
+    - system:nodes
+EOT
+  }
+}
